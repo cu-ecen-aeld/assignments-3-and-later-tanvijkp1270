@@ -1,6 +1,12 @@
 #include "systemcalls.h"
 #include <sys/wait.h>
 #include <sys/types.h>
+#include <stdio.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdlib.h>
+
 
 /**
  * @param cmd the command to execute with system()
@@ -19,15 +25,14 @@ bool do_system(const char *cmd)
  *   and return a boolean true if the system() call completed with success
  *   or false() if it returned a failure
 */
-	ret = system (cmd); 
+	ret = system(cmd); 
 	
-	if (WIFEXITED(ret))
+	if(WIFEXITED(ret))
         	return true;
-        else if (WIFSIGNALED(ret) && 
+        else if(WIFSIGNALED(ret) && 
             (WTERMSIG(ret) == SIGINT || 
              WTERMSIG(ret) == SIGQUIT)) 
                 return false;
-
        	else
        		return false;
 }
@@ -48,6 +53,7 @@ bool do_system(const char *cmd)
 
 bool do_exec(int count, ...)
 {
+    int status;
     va_list args;
     va_start(args, count);
     char * command[count+1];
@@ -74,17 +80,17 @@ bool do_exec(int count, ...)
  *
 */
  	pid = fork(); 
-        if (pid == -1) 
+        if(pid == -1) 
                 return false; 
-        else if (pid == 0) { 
-
-                execv(command[0], (command+1)); 
-                exit(-1); 
-        } 
+        else if(pid == 0) { 
+                if(execv(command[0], command) == -1)
+                	return false; 
+               
+        }
  
-        if (waitpid (pid, &status, 0) == -1) 
+        if(waitpid(pid, &status, 0) == -1) 
                 return false; 
-        else if (WIFEXITED(status)) 
+        else if(WIFEXITED(status)) 
                 return true; /* Child terminated normally */
  	else
         	return false; 
@@ -97,6 +103,7 @@ bool do_exec(int count, ...)
 */
 bool do_exec_redirect(const char *outputfile, int count, ...)
 {
+	int status;
     va_list args;
     va_start(args, count);
     pid_t pid;
@@ -135,21 +142,22 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
 		}
 		else
 		{
-			if (dup2(fd, 1) < 0) 
+			if(dup2(fd, 1) < 0) 
 			{ 
 				perror("dup2");
 				return false;
 			}
     			close(fd);
-    			execv(command[0], (command+1)); 
-                	exit(-1); 
+    			
+    			if(execv(command[0], command) == -1)
+                		return false;
                 	
-                	if (waitpid(pid, &status, 0) == -1) 
-                	return false; 
-			else if (WIFEXITED(status)) 
+                	if(waitpid(pid, &status, 0) == -1)
+                		return false; 
+			else if(WIFEXITED(status)) 
 				return true; /* Child terminated normally */
 		 	else
-			return false; 
+				return false; 
 		}
 		
 		
