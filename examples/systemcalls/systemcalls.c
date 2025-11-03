@@ -1,4 +1,6 @@
 #include "systemcalls.h"
+#include <sys/wait.h>
+#include <sys/types.h>
 
 /**
  * @param cmd the command to execute with system()
@@ -9,15 +11,25 @@
 */
 bool do_system(const char *cmd)
 {
-
+	int ret;
+	
 /*
  * TODO  add your code here
  *  Call the system() function with the command set in the cmd
  *   and return a boolean true if the system() call completed with success
  *   or false() if it returned a failure
 */
+	ret = system (cmd); 
+	
+	if (WIFEXITED(ret))
+        	return true;
+        else if (WIFSIGNALED(ret) && 
+            (WTERMSIG(ret) == SIGINT || 
+             WTERMSIG(ret) == SIGQUIT)) 
+                return false;
 
-    return true;
+       	else
+       		return false;
 }
 
 /**
@@ -39,6 +51,7 @@ bool do_exec(int count, ...)
     va_list args;
     va_start(args, count);
     char * command[count+1];
+    pid_t pid;
     int i;
     for(i=0; i<count; i++)
     {
@@ -48,6 +61,8 @@ bool do_exec(int count, ...)
     // this line is to avoid a compile warning before your implementation is complete
     // and may be removed
     command[count] = command[count];
+    
+    va_end(args);
 
 /*
  * TODO:
@@ -58,10 +73,21 @@ bool do_exec(int count, ...)
  *   as second argument to the execv() command.
  *
 */
+ 	pid = fork(); 
+        if (pid == -1) 
+                return false; 
+        else if (pid == 0) { 
 
-    va_end(args);
-
-    return true;
+                execv(command[0], (command+1)); 
+                exit(-1); 
+        } 
+ 
+        if (waitpid (pid, &status, 0) == -1) 
+                return false; 
+        else if (WIFEXITED(status)) 
+                return true; /* Child terminated normally */
+ 	else
+        	return false; 
 }
 
 /**
@@ -73,6 +99,7 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
 {
     va_list args;
     va_start(args, count);
+    pid_t pid;
     char * command[count+1];
     int i;
     for(i=0; i<count; i++)
@@ -83,7 +110,7 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
     // this line is to avoid a compile warning before your implementation is complete
     // and may be removed
     command[count] = command[count];
-
+	va_end(args);
 
 /*
  * TODO
@@ -92,8 +119,40 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
  *   The rest of the behaviour is same as do_exec()
  *
 */
+	int fd = open(outputfile, O_WRONLY|O_TRUNC|O_CREAT, 0644);
+	if (fd < 0) 
+	{ 
+		perror("open");
+		return false;
+	}
+	else
+	{
+		pid = fork();
+		if(pid == -1)
+		{
+			perror("fork");
+			return false;
+		}
+		else
+		{
+			if (dup2(fd, 1) < 0) 
+			{ 
+				perror("dup2");
+				return false;
+			}
+    			close(fd);
+    			execv(command[0], (command+1)); 
+                	exit(-1); 
+                	
+                	if (waitpid(pid, &status, 0) == -1) 
+                	return false; 
+			else if (WIFEXITED(status)) 
+				return true; /* Child terminated normally */
+		 	else
+			return false; 
+		}
+		
+		
+	}
 
-    va_end(args);
-
-    return true;
 }
