@@ -81,21 +81,56 @@ bool do_exec(int count, ...)
 */
  	pid = fork(); 
         if(pid < 0) 
+        {
+                return false;
+        } 
+        else if(pid == 0)
+        {
+        	printf("Hello from Child!\n");
+        	execv(command[0], command);
+        	exit(-1);
                 return false; 
+        }
         else 
-        { 
-                if(execv(command[0], command) == -1)
-                	return false; 
-                
-                if(waitpid(pid, &status, 0) == -1) 
-                	return false; 
-		else if(WIFEXITED(status)) 
-		        return true; /* Child terminated normally */
-	 	else
+        {   
+        	printf("Hello from Parent!\n");
+                if (waitpid(pid, &status, 0) > 0)
+		{
+		    
+		    if (WIFEXITED(status) && (WEXITSTATUS(status) == 0))
+		    {
+		    	printf("program execution successful\n");
+		    	return true;
+		    }
+		    else if (WIFEXITED(status) && WEXITSTATUS(status)) 
+		    {
+		        if (WEXITSTATUS(status) == 127)
+		        {
+		            printf("execv failed\n");
+		            return false;       
+		        }
+		        else
+		        {
+		            printf("program terminated normally,"
+		            " but returned a non-zero status\n");
+		            return false; 
+		        }            
+		    }
+		    else
+		    {
+		    	printf("program didn't terminate normally\n");    
+		    	return false;
+		    }     
+		} 
+		else 
+		{
+			// waitpid() failed
+			printf("waitpid() failed\n");
 			return false;
+		}
                
         }
-        
+	return false;
 }
 
 /**
@@ -137,13 +172,15 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
 	else
 	{
 		pid = fork();
+		printf("%d",pid);
 		if(pid < 0)
 		{
 			perror("fork");
 			return false;
 		}
-		else
+		else if(pid == 0)
 		{
+			printf("Hello from Child!\n");
 			if(dup2(fd, 1) < 0) 
 			{ 
 				perror("dup2");
@@ -151,18 +188,51 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
 			}
     			close(fd);
     			
-    			if(execv(command[0], command) == -1)
-                		return false;
-                	
-                	if(waitpid(pid, &status, 0) == -1)
-                		return false; 
-			else if(WIFEXITED(status)) 
-				return true; /* Child terminated normally */
-		 	else
-				return false; 
+    			execv(command[0], command);
+    			exit (-1);
+                	return false;
+		}
+		else
+		{
+			printf("Hello from Parent!\n");
+			
+                	if (waitpid(pid, &status, 0) > 0)
+			{
+			    
+			    if (WIFEXITED(status) && (WEXITSTATUS(status) == 0))
+			    {
+			    	printf("program execution successful\n");
+			    	return true;
+			    }
+			    else if (WIFEXITED(status) && WEXITSTATUS(status)) 
+			    {
+				if (WEXITSTATUS(status) == 127)
+				{
+				    printf("execv failed\n");
+				    return false;       
+				}
+				else
+				{
+				    printf("program terminated normally,"
+				    " but returned a non-zero status\n");
+				    return false; 
+				}            
+			    }
+			    else
+			    {
+			    	printf("program didn't terminate normally\n");    
+			    	return false;
+			    }     
+			} 
+			else 
+			{
+				// waitpid() failed
+				printf("waitpid() failed\n");
+				return false;
+			}
 		}
 		
 		
 	}
-
+	return false;
 }
