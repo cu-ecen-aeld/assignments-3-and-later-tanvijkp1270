@@ -66,7 +66,7 @@ bool do_exec(int count, ...)
     command[count] = NULL;
     // this line is to avoid a compile warning before your implementation is complete
     // and may be removed
-    command[count] = command[count];
+    //command[count] = command[count];
     
     va_end(args);
 
@@ -80,20 +80,22 @@ bool do_exec(int count, ...)
  *
 */
  	pid = fork(); 
-        if(pid == -1) 
+        if(pid < 0) 
                 return false; 
-        else if(pid == 0) { 
+        else 
+        { 
                 if(execv(command[0], command) == -1)
                 	return false; 
+                
+                if(waitpid(pid, &status, 0) == -1) 
+                	return false; 
+		else if(WIFEXITED(status)) 
+		        return true; /* Child terminated normally */
+	 	else
+			return false;
                
         }
- 
-        if(waitpid(pid, &status, 0) == -1) 
-                return false; 
-        else if(WIFEXITED(status)) 
-                return true; /* Child terminated normally */
- 	else
-        	return false; 
+        
 }
 
 /**
@@ -135,7 +137,7 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
 	else
 	{
 		pid = fork();
-		if(pid == -1)
+		if(pid < 0)
 		{
 			perror("fork");
 			return false;
