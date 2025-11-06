@@ -12,6 +12,8 @@ BUSYBOX_VERSION=1_33_1
 FINDER_APP_DIR=$(realpath $(dirname $0))
 ARCH=arm64
 CROSS_COMPILE=aarch64-none-linux-gnu-
+ASSIGNMENT_DIRPATH=/home/tanvi/Documents/Repositories/assignment-1-tanvijkp1270/finder-app
+SYSROOT_DIR=/home/tanvi/arm-cross-compiler
 
 if [ $# -lt 1 ]
 then
@@ -22,6 +24,7 @@ else
 fi
 
 mkdir -p ${OUTDIR}
+if [ $? != 0 ]; then echo "ERROR"; exit; fi
 
 cd "$OUTDIR"
 if [ ! -d "${OUTDIR}/linux-stable" ]; then
@@ -35,6 +38,30 @@ if [ ! -e ${OUTDIR}/linux-stable/arch/${ARCH}/boot/Image ]; then
     git checkout ${KERNEL_VERSION}
 
     # TODO: Add your kernel build steps here
+    make ARCH=arm64
+    CROSS_COMPILE=aarch64-none-linux-gnu-mrproper
+    
+    if [ $? != 0 ]; then echo "ERROR"; exit; fi
+    
+    make ARCH=arm64
+    CROSS_COMPILE=aarch64-none-linux-gnu-defconfig
+    
+    if [ $? != 0 ]; then echo "ERROR"; exit; fi
+    
+    make -j4 ARCH=arm64
+    CROSS_COMPILE=aarch64-none-linux-gnu-all
+    
+    if [ $? != 0 ]; then echo "ERROR"; exit; fi
+    
+    make ARCH=arm64
+    CROSS_COMPILE=aarch64-none-linux-gnu-modules
+    
+    if [ $? != 0 ]; then echo "ERROR"; exit; fi
+    
+    make ARCH=arm64
+    CROSS_COMPILE=aarch64-none-linux-gnu-dtbs
+    
+    if [ $? != 0 ]; then echo "ERROR"; exit; fi
 fi
 
 echo "Adding the Image in outdir"
@@ -49,6 +76,12 @@ fi
 
 # TODO: Create necessary base directories
 
+mkdir ${OUTDIR}/rootfs
+cd ${OUTDIR}/rootfs
+mkdir -p bin dev etc home lib lib64 proc sbin sys tmp usr var
+mkdir -p usr/bin usr/lib usr/sbin
+mkdir -p var/log
+
 cd "$OUTDIR"
 if [ ! -d "${OUTDIR}/busybox" ]
 then
@@ -61,6 +94,14 @@ else
 fi
 
 # TODO: Make and install busybox
+make distclean
+make defconfig
+make ARCH=${ARCH}
+CROSS_COMPILE=${CROSS_COMPILE}
+
+make CONFIG_PREFIX=$OUTDIR
+ARCH=${ARCH}
+CROSS_COMPILE=${CROSS_COMPILE} install
 
 echo "Library dependencies"
 ${CROSS_COMPILE}readelf -a bin/busybox | grep "program interpreter"
@@ -68,13 +109,54 @@ ${CROSS_COMPILE}readelf -a bin/busybox | grep "Shared library"
 
 # TODO: Add library dependencies to rootfs
 
+cd ${OUTDIR}/rootfs
+
+find ${SYSROOT_DIR} -name "/lib/ld-linux-aarch64.so.1"
+cp  ${OUTDIR}/rootfs/lib $1
+
+find ${SYSROOT_DIR} -name "libm.so.6"
+cp  ${OUTDIR}/rootfs/lib64 $1
+
+find ${SYSROOT_DIR} -name "libresolv.so.2"
+cp  ${OUTDIR}/rootfs/lib64 $1
+
+find ${SYSROOT_DIR} -name "libc.so.6"
+cp  ${OUTDIR}/rootfs/lib64 $1
+
 # TODO: Make device nodes
 
+sudo mknod -m 666 dev/null c 1 3 
+sudo mknod -m 666 dev/config c 5 1
+
 # TODO: Clean and build the writer utility
+
+cd ${ASSIGNMENT_DIRPATH}
+
+make clean
+make CROSS_COMPILE
 
 # TODO: Copy the finder related scripts and executables to the /home directory
 # on the target rootfs
 
+cd ${ASSIGNMENT_DIRPATH}
+
+cp finder.sh ${OUTDIR}/rootfs/home
+
+cp finder-test.sh ${OUTDIR}/rootfs/home
+
+cp autorun-qemu.sh ${OUTDIR}/rootfs/home
+
+cp conf/username.txt ${OUTDIR}/rootfs/home
+
+cp conf/assignment.txt ${OUTDIR}/rootfs/home
+
 # TODO: Chown the root directory
 
+cd ${OUTDIR}/rootfs
+sudo chown -R root:root
+
 # TODO: Create initramfs.cpio.gz
+
+cd ${OUTDIR}/rootfs
+find . | cpio -H newc -ov --owner root:root > ${OUTDIR}/initramfs.cpio
+gzip -f initramfs.cpio

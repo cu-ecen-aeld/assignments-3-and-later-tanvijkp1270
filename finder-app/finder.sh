@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # Assignment 1 script finder.sh
 # Author: Tanvi sharma
 
