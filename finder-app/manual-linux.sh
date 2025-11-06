@@ -39,27 +39,27 @@ if [ ! -e ${OUTDIR}/linux-stable/arch/${ARCH}/boot/Image ]; then
 
     # TODO: Add your kernel build steps here
     make ARCH=arm64
-    CROSS_COMPILE=aarch64-none-linux-gnu-mrproper
+    CROSS_COMPILE=aarch64-none-linux-gnu- mrproper
     
     if [ $? != 0 ]; then echo "ERROR"; exit; fi
     
     make ARCH=arm64
-    CROSS_COMPILE=aarch64-none-linux-gnu-defconfig
+    CROSS_COMPILE=aarch64-none-linux-gnu- defconfig
     
     if [ $? != 0 ]; then echo "ERROR"; exit; fi
     
     make -j4 ARCH=arm64
-    CROSS_COMPILE=aarch64-none-linux-gnu-all
+    CROSS_COMPILE=aarch64-none-linux-gnu- all
     
     if [ $? != 0 ]; then echo "ERROR"; exit; fi
     
-    make ARCH=arm64
-    CROSS_COMPILE=aarch64-none-linux-gnu-modules
+    #make ARCH=arm64
+    #CROSS_COMPILE=aarch64-none-linux-gnu-modules
     
-    if [ $? != 0 ]; then echo "ERROR"; exit; fi
+    #if [ $? != 0 ]; then echo "ERROR"; exit; fi
     
     make ARCH=arm64
-    CROSS_COMPILE=aarch64-none-linux-gnu-dtbs
+    CROSS_COMPILE=aarch64-none-linux-gnu- dtbs
     
     if [ $? != 0 ]; then echo "ERROR"; exit; fi
 fi
