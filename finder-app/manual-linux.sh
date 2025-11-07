@@ -53,10 +53,14 @@ if [ ! -e ${OUTDIR}/linux-stable/arch/${ARCH}/boot/Image ]; then
     
     if [ $? != 0 ]; then echo "ERROR"; exit; fi
     
-    #make ARCH=arm64
-    #CROSS_COMPILE=aarch64-none-linux-gnu-modules
+    make -j4 ARCH=arm64 CROSS_COMPILE=aarch64-none-linux-gnu- Image
     
-    #if [ $? != 0 ]; then echo "ERROR"; exit; fi
+    if [ $? != 0 ]; then echo "ERROR"; exit; fi
+    
+    make ARCH=arm64
+    CROSS_COMPILE=aarch64-none-linux-gnu-modules
+    
+    if [ $? != 0 ]; then echo "ERROR"; exit; fi
     
     make ARCH=arm64
     CROSS_COMPILE=aarch64-none-linux-gnu- dtbs
@@ -104,24 +108,20 @@ ARCH=${ARCH}
 CROSS_COMPILE=${CROSS_COMPILE} install
 
 echo "Library dependencies"
-${CROSS_COMPILE}readelf -a bin/busybox | grep "program interpreter"
-${CROSS_COMPILE}readelf -a bin/busybox | grep "Shared library"
+${CROSS_COMPILE}readelf -a busybox | grep "program interpreter"
+${CROSS_COMPILE}readelf -a busybox | grep "Shared library"
 
 # TODO: Add library dependencies to rootfs
 
 cd ${OUTDIR}/rootfs
 
-find ${SYSROOT_DIR} -name "/lib/ld-linux-aarch64.so.1"
-cp  ${OUTDIR}/rootfs/lib $1
+find ${SYSROOT_DIR} -name "ld-linux-aarch64.so.1" -type f -print0 | xargs -0 cp -t ${OUTDIR}/rootfs/lib
 
-find ${SYSROOT_DIR} -name "libm.so.6"
-cp  ${OUTDIR}/rootfs/lib64 $1
+find ${SYSROOT_DIR} -name "libm.so.6" -type f -print0 | xargs -0 cp -t ${OUTDIR}/rootfs/lib64
 
-find ${SYSROOT_DIR} -name "libresolv.so.2"
-cp  ${OUTDIR}/rootfs/lib64 $1
+find ${SYSROOT_DIR} -name "libresolv.so.2" -type f -print0 | xargs -0 cp -t ${OUTDIR}/rootfs/lib64
 
-find ${SYSROOT_DIR} -name "libc.so.6"
-cp  ${OUTDIR}/rootfs/lib64 $1
+find ${SYSROOT_DIR} -name "libc.so.6" -type f -print0 | xargs -0 cp -t ${OUTDIR}/rootfs/lib64
 
 # TODO: Make device nodes
 
@@ -140,23 +140,26 @@ make CROSS_COMPILE
 
 cd ${ASSIGNMENT_DIRPATH}
 
-cp finder.sh ${OUTDIR}/rootfs/home
+cp -r finder.sh ${OUTDIR}/rootfs/home
 
-cp finder-test.sh ${OUTDIR}/rootfs/home
+cp -r finder.sh /home/tanvi/Documents/linux-stable/rootfs/home
 
-cp autorun-qemu.sh ${OUTDIR}/rootfs/home
+cp -r finder-test.sh ${OUTDIR}/rootfs/home
 
-cp conf/username.txt ${OUTDIR}/rootfs/home
+cp -r autorun-qemu.sh ${OUTDIR}/rootfs/home
 
-cp conf/assignment.txt ${OUTDIR}/rootfs/home
+cp -r conf/username.txt ${OUTDIR}/rootfs/home
+
+cp -r conf/assignment.txt ${OUTDIR}/rootfs/home
 
 # TODO: Chown the root directory
 
-cd ${OUTDIR}/rootfs
-sudo chown -R root:root
+cd ${OUTDIR}
+sudo chown -R root:root rootfs
 
 # TODO: Create initramfs.cpio.gz
 
 cd ${OUTDIR}/rootfs
 find . | cpio -H newc -ov --owner root:root > ${OUTDIR}/initramfs.cpio
-gzip -f initramfs.cpio
+
+gzip -f ${OUTDIR}/initramfs.cpio
