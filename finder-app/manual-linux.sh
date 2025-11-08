@@ -38,18 +38,15 @@ if [ ! -e ${OUTDIR}/linux-stable/arch/${ARCH}/boot/Image ]; then
     git checkout ${KERNEL_VERSION}
 
     # TODO: Add your kernel build steps here
-    make ARCH=arm64
-    CROSS_COMPILE=aarch64-none-linux-gnu- mrproper
+    make ARCH=arm64 CROSS_COMPILE=aarch64-none-linux-gnu- mrproper
     
     if [ $? != 0 ]; then echo "ERROR"; exit; fi
     
-    make ARCH=arm64
-    CROSS_COMPILE=aarch64-none-linux-gnu- defconfig
+    make ARCH=arm64 CROSS_COMPILE=aarch64-none-linux-gnu- defconfig
     
     if [ $? != 0 ]; then echo "ERROR"; exit; fi
     
-    make -j4 ARCH=arm64
-    CROSS_COMPILE=aarch64-none-linux-gnu- all
+    make -j4 ARCH=arm64 CROSS_COMPILE=aarch64-none-linux-gnu- all
     
     if [ $? != 0 ]; then echo "ERROR"; exit; fi
     
@@ -57,18 +54,17 @@ if [ ! -e ${OUTDIR}/linux-stable/arch/${ARCH}/boot/Image ]; then
     
     if [ $? != 0 ]; then echo "ERROR"; exit; fi
     
-    make ARCH=arm64
-    CROSS_COMPILE=aarch64-none-linux-gnu-modules
+    make ARCH=arm64 CROSS_COMPILE=aarch64-none-linux-gnu- modules
     
     if [ $? != 0 ]; then echo "ERROR"; exit; fi
     
-    make ARCH=arm64
-    CROSS_COMPILE=aarch64-none-linux-gnu- dtbs
+    make ARCH=arm64 CROSS_COMPILE=aarch64-none-linux-gnu- dtbs
     
     if [ $? != 0 ]; then echo "ERROR"; exit; fi
 fi
 
 echo "Adding the Image in outdir"
+cp ${OUTDIR}/linux-stable/arch/${ARCH}/boot/Image ${OUTDIR}
 
 echo "Creating the staging directory for the root filesystem"
 cd "$OUTDIR"
@@ -93,19 +89,17 @@ git clone git://busybox.net/busybox.git
     cd busybox
     git checkout ${BUSYBOX_VERSION}
     # TODO:  Configure busybox
+    make distclean
+    make defconfig
 else
     cd busybox
 fi
 
 # TODO: Make and install busybox
-make distclean
-make defconfig
-make ARCH=${ARCH}
-CROSS_COMPILE=${CROSS_COMPILE}
 
-make CONFIG_PREFIX=$OUTDIR
-ARCH=${ARCH}
-CROSS_COMPILE=${CROSS_COMPILE} install
+make -j4 ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE}
+
+make CONFIG_PREFIX=$OUTDIR/rootfs ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} install
 
 echo "Library dependencies"
 ${CROSS_COMPILE}readelf -a busybox | grep "program interpreter"
@@ -117,7 +111,7 @@ cd ${OUTDIR}/rootfs
 
 find ${SYSROOT_DIR} -name "ld-linux-aarch64.so.1" -type f -print0 | xargs -0 cp -t ${OUTDIR}/rootfs/lib
 
-find ${SYSROOT_DIR} -name "libm.so.6" -type f -print0 | xargs -0 cp -t ${OUTDIR}/rootfs/lib64
+find ${SYSROOT_DIR} -name "libm.so.6" -type f -print0 | xargs -0 cp -t ${OUTDIR}/rootfs/lib64  #lib?
 
 find ${SYSROOT_DIR} -name "libresolv.so.2" -type f -print0 | xargs -0 cp -t ${OUTDIR}/rootfs/lib64
 
@@ -125,32 +119,32 @@ find ${SYSROOT_DIR} -name "libc.so.6" -type f -print0 | xargs -0 cp -t ${OUTDIR}
 
 # TODO: Make device nodes
 
+cd ${OUTDIR}/rootfs
+
 sudo mknod -m 666 dev/null c 1 3 
-sudo mknod -m 666 dev/config c 5 1
+sudo mknod -m 666 dev/console c 5 1
+
+#mount -t proc proc /proc
+#mount -t sysfs sysfs /sys
 
 # TODO: Clean and build the writer utility
 
 cd ${ASSIGNMENT_DIRPATH}
 
 make clean
-make CROSS_COMPILE
+make CROSS_COMPILE=${CROSS_COMPILE}
 
 # TODO: Copy the finder related scripts and executables to the /home directory
 # on the target rootfs
 
-cd ${ASSIGNMENT_DIRPATH}
+cp "${ASSIGNMENT_DIRPATH}/writer"  "${OUTDIR}/rootfs/home/"
+cp "${ASSIGNMENT_DIRPATH}/finder.sh" "${OUTDIR}/rootfs/home/"
+cp "${ASSIGNMENT_DIRPATH}/finder-test.sh" "${OUTDIR}/rootfs/home/"
+cp "${ASSIGNMENT_DIRPATH}/autorun-qemu.sh" "${OUTDIR}/rootfs/home/"
 
-cp -r finder.sh ${OUTDIR}/rootfs/home
-
-cp -r finder.sh /home/tanvi/Documents/linux-stable/rootfs/home
-
-cp -r finder-test.sh ${OUTDIR}/rootfs/home
-
-cp -r autorun-qemu.sh ${OUTDIR}/rootfs/home
-
-cp -r conf/username.txt ${OUTDIR}/rootfs/home
-
-cp -r conf/assignment.txt ${OUTDIR}/rootfs/home
+mkdir -p "${OUTDIR}/rootfs/home/conf"
+cp "${ASSIGNMENT_DIRPATH}/conf/username.txt" "${OUTDIR}/rootfs/home/conf/"
+cp "${ASSIGNMENT_DIRPATH}/conf/assignment.txt" "${OUTDIR}/rootfs/home/conf/"
 
 # TODO: Chown the root directory
 

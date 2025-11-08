@@ -1,5 +1,12 @@
+.PHONY: all clean
+
+CC := $(CROSS_COMPILE)gcc
+
 writer:writer.c
 	gcc writer.c -o writer
+	
+all:
+	$(CC) writer.c -o writer
 	
 clean:
 	rm -f *.o writer *.map *.elf *.out
@@ -7,5 +14,10 @@ clean:
 CROSS_COMPILE:
 	aarch64-none-linux-gnu-gcc -g -Wall   -c -o writer.o writer.c
 	
-,DELETE_ON_ERROR:
+DELETE_ON_ERROR:
 all:*.o *.out *.elf writer
+
+
+
+
+
