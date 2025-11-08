@@ -24,25 +24,10 @@ else
 fi
 
 mkdir -p ${OUTDIR}
-mkdir -p ${OUTDIR}/rootfs
-mkdir -p ${OUTDIR}/rootfs/lib
-mkdir -p ${OUTDIR}/rootfs/lib64
 
 if [ $? != 0 ]; then echo "ERROR"; exit; fi
 
 cd "$OUTDIR"
-
-cd ${OUTDIR}/rootfs
-
-SYSROOT_DIR=$(dirname $(which ${CROSS_COMPILE}gcc))/../aarch64-none-linux-gnu/
-
-find ${SYSROOT_DIR} -name "ld-linux-aarch64.so.1" -type f -print0 | xargs -0 cp -t ${OUTDIR}/rootfs/lib
-
-find ${SYSROOT_DIR} -name "libm.so.6" -type f -print0 | xargs -0 cp -t ${OUTDIR}/rootfs/lib64  #lib?
-
-find ${SYSROOT_DIR} -name "libresolv.so.2" -type f -print0 | xargs -0 cp -t ${OUTDIR}/rootfs/lib64
-
-find ${SYSROOT_DIR} -name "libc.so.6" -type f -print0 | xargs -0 cp -t ${OUTDIR}/rootfs/lib64
 
 if [ ! -d "${OUTDIR}/linux-stable" ]; then
     #Clone only if the repository does not exist.
@@ -125,6 +110,8 @@ ${CROSS_COMPILE}readelf -a busybox | grep "Shared library"
 # TODO: Add library dependencies to rootfs
 
 cd ${OUTDIR}/rootfs
+
+SYSROOT_DIR=$(dirname $(which ${CROSS_COMPILE}gcc))/../aarch64-none-linux-gnu/
 
 find ${SYSROOT_DIR} -name "ld-linux-aarch64.so.1" -type f -print0 | xargs -0 cp -t ${OUTDIR}/rootfs/lib
 
