@@ -12,7 +12,7 @@ BUSYBOX_VERSION=1_33_1
 FINDER_APP_DIR=$(realpath $(dirname $0))
 ARCH=arm64
 CROSS_COMPILE=aarch64-none-linux-gnu-
-ASSIGNMENT_DIRPATH=/home/tanvi/Documents/Repositories/assignment-1-tanvijkp1270/finder-app
+
 #SYSROOT_DIR=/home/tanvi/arm-cross-compiler
 
 if [ $# -lt 1 ]
@@ -125,15 +125,15 @@ find ${SYSROOT_DIR} -name "libc.so.6" -type f -print0 | xargs -0 cp -t ${OUTDIR}
 
 cd ${OUTDIR}/rootfs
 
-sudo mknod -m 666 dev/null c 1 3 
-sudo mknod -m 666 dev/console c 5 1
+sudo mknod -m 666 ${OUTDIR}/rootfs/dev/null c 1 3 
+sudo mknod -m 666 ${OUTDIR}/rootfs/dev/null c 5 1
 
 #mount -t proc proc /proc
 #mount -t sysfs sysfs /sys
 
 # TODO: Clean and build the writer utility
 
-cd ${ASSIGNMENT_DIRPATH}
+cd ${FINDER_APP_DIR}
 
 make clean
 make CROSS_COMPILE=${CROSS_COMPILE}
@@ -141,14 +141,14 @@ make CROSS_COMPILE=${CROSS_COMPILE}
 # TODO: Copy the finder related scripts and executables to the /home directory
 # on the target rootfs
 
-cp "${ASSIGNMENT_DIRPATH}/writer"  "${OUTDIR}/rootfs/home/"
-cp "${ASSIGNMENT_DIRPATH}/finder.sh" "${OUTDIR}/rootfs/home/"
-cp "${ASSIGNMENT_DIRPATH}/finder-test.sh" "${OUTDIR}/rootfs/home/"
-cp "${ASSIGNMENT_DIRPATH}/autorun-qemu.sh" "${OUTDIR}/rootfs/home/"
+cp "${FINDER_APP_DIR}/writer"  "${OUTDIR}/rootfs/home/"
+cp "${FINDER_APP_DIR}/finder.sh" "${OUTDIR}/rootfs/home/"
+cp "${FINDER_APP_DIR}/finder-test.sh" "${OUTDIR}/rootfs/home/"
+cp "${FINDER_APP_DIR}/autorun-qemu.sh" "${OUTDIR}/rootfs/home/"
 
 mkdir -p "${OUTDIR}/rootfs/home/conf"
-cp "${ASSIGNMENT_DIRPATH}/conf/username.txt" "${OUTDIR}/rootfs/home/conf/"
-cp "${ASSIGNMENT_DIRPATH}/conf/assignment.txt" "${OUTDIR}/rootfs/home/conf/"
+cp "${FINDER_APP_DIR}/conf/username.txt" "${OUTDIR}/rootfs/home/conf/"
+cp "${FINDER_APP_DIR}/conf/assignment.txt" "${OUTDIR}/rootfs/home/conf/"
 
 # TODO: Chown the root directory
 
