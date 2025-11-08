@@ -13,7 +13,7 @@ FINDER_APP_DIR=$(realpath $(dirname $0))
 ARCH=arm64
 CROSS_COMPILE=aarch64-none-linux-gnu-
 ASSIGNMENT_DIRPATH=/home/tanvi/Documents/Repositories/assignment-1-tanvijkp1270/finder-app
-SYSROOT_DIR=/home/tanvi/arm-cross-compiler
+#SYSROOT_DIR=/home/tanvi/arm-cross-compiler
 
 if [ $# -lt 1 ]
 then
@@ -33,6 +33,8 @@ if [ $? != 0 ]; then echo "ERROR"; exit; fi
 cd "$OUTDIR"
 
 cd ${OUTDIR}/rootfs
+
+SYSROOT_DIR=$(dirname $(which ${CROSS_COMPILE}gcc))/../aarch64-none-linux-gnu/
 
 find ${SYSROOT_DIR} -name "ld-linux-aarch64.so.1" -type f -print0 | xargs -0 cp -t ${OUTDIR}/rootfs/lib
 
