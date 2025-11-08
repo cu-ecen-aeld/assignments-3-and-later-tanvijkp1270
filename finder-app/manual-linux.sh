@@ -126,7 +126,7 @@ find ${SYSROOT_DIR} -name "libc.so.6" -type f -print0 | xargs -0 cp -t ${OUTDIR}
 cd ${OUTDIR}/rootfs
 
 sudo mknod -m 666 ${OUTDIR}/rootfs/dev/null c 1 3 
-sudo mknod -m 666 ${OUTDIR}/rootfs/dev/null c 5 1
+sudo mknod -m 666 ${OUTDIR}/rootfs/dev/console c 5 1
 
 #mount -t proc proc /proc
 #mount -t sysfs sysfs /sys
