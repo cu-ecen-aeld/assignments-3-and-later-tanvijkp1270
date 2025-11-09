@@ -1,21 +1,23 @@
-.PHONY: all clean
+CC	= $(CROSS_COMPILE)gcc
 
-CC := $(CROSS_COMPILE)gcc
+TARGET 	 = writer
+SOURCES = writer.c
+OBJECTS = writer.o
 
-writer:writer.c
-	gcc writer.c -o writer
-	
-all:
-	$(CC) writer.c -o writer
-	
+all: $(TARGET)
+
+
+$(TARGET): $(OBJECTS)
+	$(CC) $(OBJECTS) -o $(TARGET)
+
+%.o : %.c
+	$(CC) -c $< -o $@
+
 clean:
-	rm -f *.o writer *.map *.elf *.out
-	
-CROSS_COMPILE:
-	aarch64-none-linux-gnu-gcc -g -Wall   -c -o writer.o writer.c
-	
-DELETE_ON_ERROR:
-all:*.o *.out *.elf writer
+	rm -rf $(TARGET)
+	rm -rf *.o
+
+.PHONY: all clean
 
 
 
