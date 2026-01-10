@@ -1,6 +1,6 @@
 CFLAGS := -g -Wall -Werror
 
-CC := gcc
+CC := $(CROSS_COMPILE)gcc
 
 TARGET  = aesdsocket
 SOURCES = aesdsocket.c

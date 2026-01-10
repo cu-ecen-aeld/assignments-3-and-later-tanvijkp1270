@@ -12,8 +12,3 @@ clean:
 	rm -rf *.o
 
 .PHONY: all clean
-
-
-
-
-
